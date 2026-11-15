@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MiniLearn: learn from your data</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,800&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{--forest:#14532d;--leaf:#2f9e5b;--sage:#86c9a0;--mint:#e8f5ec;--paper:#fbfdfb;--ink:#12261a;--muted:#5b7264;--line:#d3e6da;--warn:#b45309}
+*{box-sizing:border-box}
+body{margin:0;font:16px/1.6 'DM Sans',system-ui,sans-serif;color:var(--ink);background:var(--paper);
+ background-image:linear-gradient(var(--line) 1px,transparent 1px);background-size:100% 32px;background-attachment:local}
+h1,h2,h3{font-family:Fraunces,Georgia,serif;line-height:1.15;margin:0 0 .5rem;color:var(--forest)}
+header{background:var(--forest);color:#fff;padding:2.2rem 1.25rem 2.4rem;position:relative;overflow:hidden}
+header:after{content:"";position:absolute;right:-60px;top:-60px;width:260px;height:260px;border-radius:50%;background:var(--leaf);opacity:.35}
+.wrap{max-width:960px;margin:0 auto;position:relative;z-index:1}
+.brand{display:flex;align-items:center;gap:.6rem;font-family:Fraunces,serif;font-weight:800;font-size:1.3rem}
+header h1{color:#fff;font-size:clamp(1.8rem,5vw,2.8rem);margin-top:1.2rem;max-width:18ch}
+header p{max-width:52ch;color:#d6efe0;margin:.6rem 0 0}
+main{max-width:960px;margin:1.5rem auto 3rem;padding:0 1.25rem;position:relative;z-index:2}
+.card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:1.4rem;margin-bottom:1.2rem;box-shadow:0 6px 20px rgba(20,83,45,.07)}
+.steps{display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:1.2rem}
+.steps span{padding:.3rem .8rem;border-radius:99px;background:var(--mint);color:var(--muted);font-size:.9rem;font-weight:500}
+.steps .on{background:var(--leaf);color:#fff}
+.drop{display:block;border:2px dashed var(--sage);border-radius:14px;padding:2rem 1rem;text-align:center;background:var(--mint);cursor:pointer;transition:.2s}
+.drop:hover,.drop.over,.drop:focus-within{background:#d9efe1;border-color:var(--leaf)}
+.drop input{position:absolute;opacity:0;width:1px;height:1px}
+.drop b{display:block;font-family:Fraunces,serif;font-size:1.2rem;color:var(--forest)}
+.hidden{display:none!important}
+.goals{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:.9rem}
+.goal{text-align:left;font:inherit;background:#fff;border:2px solid var(--line);border-radius:14px;padding:1rem;cursor:pointer;transition:.15s;color:var(--ink)}
+.goal:hover{border-color:var(--sage)}
+.goal[aria-pressed=true]{border-color:var(--leaf);background:var(--mint)}
+.goal .ic{font-size:1.6rem}.goal b{display:block;font-family:Fraunces,serif;color:var(--forest);font-size:1.1rem}
+.goal small{color:var(--muted)}
+.chips{display:flex;flex-wrap:wrap;gap:.4rem;margin:.6rem 0}
+.chip{background:var(--mint);border:1px solid var(--line);border-radius:8px;padding:.15rem .6rem;font-size:.85rem}
+.chip em{font-style:normal;color:var(--muted)}
+label{display:block;font-weight:500;margin:.8rem 0 .25rem}
+select{font:inherit;padding:.5rem .7rem;border:1.5px solid var(--sage);border-radius:10px;background:#fff;min-width:200px;max-width:100%}
+.row{display:flex;gap:1rem;flex-wrap:wrap;align-items:flex-end}
+button.run{font:inherit;font-weight:700;background:var(--forest);color:#fff;border:0;border-radius:10px;padding:.65rem 1.4rem;cursor:pointer;margin-top:1rem}
+button.run:hover{background:var(--leaf)}button.run:disabled{opacity:.6;cursor:wait}
+:focus-visible{outline:3px solid var(--leaf);outline-offset:2px}
+.lesson{background:var(--mint);border-left:5px solid var(--leaf);border-radius:0 12px 12px 0;padding:.8rem 1rem;margin:1rem 0;font-size:.95rem}
+.lesson b{color:var(--forest)}
+.err{background:#fff4e5;border-left:5px solid var(--warn);padding:.8rem 1rem;border-radius:0 12px 12px 0}
+table{width:100%;border-collapse:collapse;font-size:.92rem}
+th,td{padding:.45rem .5rem;border-bottom:1px solid var(--line);text-align:left;vertical-align:middle}
+th{color:var(--forest);font-weight:700}
+.scroll{overflow-x:auto}
+.bar{display:inline-block;width:100%;min-width:90px;height:10px;background:var(--mint);border-radius:6px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--leaf);border-radius:6px}
+.bar.neg i{background:var(--warn)}
+.best{background:var(--forest);color:#fff;border-radius:6px;padding:0 .45rem;font-size:.75rem;margin-left:.4rem}
+.hist{display:flex;align-items:flex-end;gap:2px;height:34px}.hist i{flex:1;background:var(--sage);border-radius:2px 2px 0 0;min-height:2px}
+.col{border:1px solid var(--line);border-radius:12px;padding:.8rem;margin:.6rem 0}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:.8rem}
+.big{font-family:Fraunces,serif;font-size:2.4rem;color:var(--forest);line-height:1}
+details{margin:.2rem 0}summary{cursor:pointer;color:var(--leaf);font-weight:500}
+.heat td{text-align:center;font-weight:500}
+@media(prefers-reduced-motion:no-preference){.card{animation:rise .4s ease}}@keyframes rise{from{opacity:0;transform:translateY(8px)}}
+</style>
+</head>
+<body>
+<header><div class="wrap">
+ <div class="brand"><svg width="30" height="30" viewBox="0 0 32 32" aria-hidden="true"><path d="M5 27C5 12 14 5 27 5c0 13-7 22-22 22z" fill="#86c9a0"/><path d="M5 27C11 18 17 13 24 9" stroke="#14532d" stroke-width="2" fill="none" stroke-linecap="round"/></svg>MiniLearn</div>
+ <h1>Learn what your data is trying to tell you</h1>
+ <p>Upload a CSV, then choose what you want to do: predict something, explore the data, compare two columns, or discover natural groups. Every result comes with a short lesson.</p>
+</div></header>
+<main>
+ <div class="steps" aria-label="Progress"><span id="s1" class="on">1. Upload</span><span id="s2">2. Choose a goal</span><span id="s3">3. Learn</span></div>
+
+ <section class="card">
+  <label class="drop" id="drop"><input type="file" id="file" accept=".csv,text/csv"><b>Drop your CSV here or click to browse</b><span id="fname">First row must be column names. Large files are sampled when predicting.</span></label>
+  <div id="err1"></div>
+ </section>
+
+ <section class="card hidden" id="profile">
+  <h2>Your data at a glance</h2>
+  <p id="sum"></p><div class="chips" id="chips"></div>
+  <h3 style="margin-top:1.2rem">What would you like to do?</h3>
+  <div class="goals" id="goals">
+   <button class="goal" data-g="predict" aria-pressed="false"><span class="ic">🎯</span><b>Predict a column</b><small>Race 6 to 7 models and see which learns it best.</small></button>
+   <button class="goal" data-g="explore" aria-pressed="false"><span class="ic">🔎</span><b>Explore the data</b><small>Distributions, common values and linked columns.</small></button>
+   <button class="goal" data-g="compare" aria-pressed="false"><span class="ic">⚖️</span><b>Compare two columns</b><small>Is one related to, or different across, the other?</small></button>
+   <button class="goal" data-g="groups" aria-pressed="false"><span class="ic">🌱</span><b>Find hidden groups</b><small>Let k-means cluster similar rows together.</small></button>
+  </div>
+  <div id="form"></div>
+ </section>
+
+ <section id="out" aria-live="polite"></section>
+</main>
+
+<script>
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const f = (x, d = 2) => Number(x).toFixed(d);
+const bar = (p, neg) => `<span class="bar ${neg ? 'neg' : ''}"><i style="width:${Math.max(0, Math.min(1, Math.abs(p))) * 100}%"></i></span>`;
+const lesson = t => `<div class="lesson"><b>Lesson.</b> ${t}</div>`;
+let file = null, cols = [], goal = null;
+
+function step(n) { [1,2,3].forEach(i => $('#s'+i).classList.toggle('on', i <= n)); }
+function opts(list, sel) { return list.map(c => `<option ${c.name === sel ? 'selected' : ''}>${esc(c.name)}</option>`).join(''); }
+
+const drop = $('#drop');
+['dragover','dragenter'].forEach(e => drop.addEventListener(e, ev => { ev.preventDefault(); drop.classList.add('over'); }));
+['dragleave','drop'].forEach(e => drop.addEventListener(e, ev => { ev.preventDefault(); drop.classList.remove('over'); }));
+drop.addEventListener('drop', ev => { if (ev.dataTransfer.files[0]) load(ev.dataTransfer.files[0]); });
+$('#file').addEventListener('change', e => { if (e.target.files[0]) load(e.target.files[0]); });
+
+async function post(url, extra) {
+  const fd = new FormData(); fd.append('file', file);
+  for (const k in extra) fd.append(k, extra[k]);
+  const res = await fetch(url, { method: 'POST', body: fd });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Something went wrong.');
+  return data;
+}
+
+async function load(fl) {
+  file = fl; $('#fname').textContent = fl.name; $('#err1').innerHTML = ''; $('#out').innerHTML = ''; $('#form').innerHTML = ''; goal = null;
+  document.querySelectorAll('.goal').forEach(b => b.setAttribute('aria-pressed', 'false'));
+  try {
+    const d = await post('/api/analyze', {});
+    cols = d.columns;
+    $('#sum').textContent = `${d.rows} rows and ${cols.length} columns. Pick a goal below.`;
+    $('#chips').innerHTML = cols.map(c => `<span class="chip">${esc(c.name)} <em>${c.type}${c.missing ? ', ' + c.missing + ' missing' : ''}</em></span>`).join('');
+    $('#profile').classList.remove('hidden'); step(2);
+  } catch (e) { $('#profile').classList.add('hidden'); $('#err1').innerHTML = `<div class="err" style="margin-top:1rem">${esc(e.message)}</div>`; step(1); }
+}
+
+$('#goals').addEventListener('click', e => {
+  const b = e.target.closest('.goal'); if (!b) return;
+  goal = b.dataset.g;
+  document.querySelectorAll('.goal').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+  const nums = cols.filter(c => c.type === 'numeric');
+  let h = '';
+  if (goal === 'predict') h = `<label for="t">Which column should the models predict?</label><select id="t">${opts(cols, cols[cols.length - 1].name)}</select>
+    <label><input type="checkbox" id="tune" checked> Tune each model's settings (slower, usually better)</label>`;
+  if (goal === 'compare') h = `<div class="row"><div><label for="a">First column</label><select id="a">${opts(cols, cols[0].name)}</select></div>
+    <div><label for="b">Second column</label><select id="b">${opts(cols, (cols[1] || cols[0]).name)}</select></div></div>`;
+  if (goal === 'groups') h = `<label for="k">How many groups?</label><select id="k">${[2,3,4,5,6].map(n => `<option ${n === 3 ? 'selected' : ''}>${n}</option>`).join('')}</select>
+    ${nums.length < 2 ? '<p class="err">This file has fewer than two numeric columns, so grouping will not work.</p>' : ''}`;
+  h += `<button class="run" id="go">${{predict:'Rank the models', explore:'Explore my data', compare:'Compare', groups:'Find groups'}[goal]}</button>`;
+  $('#form').innerHTML = h; $('#go').addEventListener('click', run);
+});
+
+async function run() {
+  const btn = $('#go'); btn.disabled = true; btn.textContent = 'Working…';
+  $('#out').innerHTML = '';
+  try {
+    let html;
+    if (goal === 'predict') html = predictView(await post('/api/analyze', { target: $('#t').value, tune: $('#tune').checked ? '1' : '0' }));
+    if (goal === 'explore') html = exploreView(await post('/api/explore', { mode: 'overview' }));
+    if (goal === 'compare') html = compareView(await post('/api/explore', { mode: 'compare', a: $('#a').value, b: $('#b').value }));
+    if (goal === 'groups') html = groupsView(await post('/api/explore', { mode: 'groups', k: $('#k').value }));
+    $('#out').innerHTML = html; step(3);
+    $('#out').scrollIntoView({ behavior: 'smooth' });
+  } catch (e) { $('#out').innerHTML = `<div class="card"><div class="err">${esc(e.message)}</div></div>`; }
+  btn.disabled = false; btn.textContent = 'Run again';
+}
+
+function predictView(r) {
+  const fc = r.final_check, max = Math.max(...r.results.map(x => x.score), 0.0001);
+  const kind = r.task === 'regression' ? 'a number (regression)' : 'a category (classification)';
+  return `<div class="card"><h2>Model leaderboard</h2>
+   <p>Predicting ${kind} using ${r.features.length} features and ${r.rows} rows. Higher ${esc(r.score_name)} is better.</p>
+   <div class="scroll"><table><tr><th>Model</th><th>${esc(r.score_name)}</th><th style="min-width:110px"></th><th>±</th><th>${esc(r.extra_name)}</th><th>vs baseline</th></tr>
+   ${r.results.map(m => `<tr><td>${esc(m.name)}${m.name === r.best ? '<span class="best">best</span>' : m.tie ? ' <small>(tied)</small>' : ''}</td>
+    <td>${f(m.score, 3)}</td><td>${bar(m.score / max, m.score < 0)}</td><td>${f(m.spread, 3)}</td><td>${f(m.extra, 3)}</td><td>${m.vs_baseline >= 0 ? '+' : ''}${f(m.vs_baseline, 3)}</td></tr>`).join('')}</table></div>
+   ${lesson('The <b>baseline</b> is a model that just guesses the most common answer (or the average). Any model that does not clearly beat it has learned nothing useful. The <b>±</b> column is how much the score moved between test folds, so two models closer than that are effectively tied.')}
+   <h3>Why each model ranked where it did</h3>
+   ${r.results.map(m => `<details><summary>${esc(m.name)}</summary><ul>${m.notes.map(n => `<li>${esc(n)}</li>`).join('')}</ul></details>`).join('')}</div>
+   <div class="card"><h2>Final exam on unseen rows</h2>
+    <div class="grid2"><div><div class="big">${f(fc.score, 3)}</div><p>${esc(fc.model)} on 20% of rows it never saw</p></div>
+    <div><div class="big" style="color:var(--leaf)">${f(fc.cv_score, 3)}</div><p>What cross-validation predicted</p></div></div>
+    ${lesson('If the final score is close to the cross-validation score, the ranking is trustworthy. A big drop would mean we tuned too closely to the training data.')}
+    <h3>What the best model relied on</h3>
+    <table>${r.importance.map(([n, d]) => `<tr><td>${esc(n)}</td><td style="width:50%">${bar(d / (r.importance[0][1] || 1), d < 0)}</td><td>${f(d, 3)}</td></tr>`).join('')}</table>
+    <p><small>Each number is how far the score drops when that feature is shuffled. A bigger drop means the model leaned on it more.</small></p></div>`;
+}
+
+function exploreView(d) {
+  const num = d.columns.filter(c => c.kind === 'numeric'), txt = d.columns.filter(c => c.kind === 'text');
+  return `<div class="card"><h2>Numeric columns</h2><div class="grid2">${num.map(c => { const m = Math.max(...c.hist, 1);
+    return `<div class="col"><b>${esc(c.name)}</b><div class="hist" aria-label="histogram">${c.hist.map(h => `<i style="height:${h / m * 100}%"></i>`).join('')}</div>
+    <small>mean ${f(c.mean)} · median ${f(c.median)} · spread ${f(c.std)}<br>range ${f(c.min)} to ${f(c.max)}</small></div>`; }).join('') || '<p>No numeric columns.</p>'}</div>
+   ${lesson('The bars show how many rows fall in each range. When the <b>mean</b> and <b>median</b> differ a lot, a few extreme values are pulling the average.')}</div>
+   ${txt.length ? `<div class="card"><h2>Text columns: most common values</h2><div class="grid2">${txt.map(c => { const m = c.top[0][1];
+    return `<div class="col"><b>${esc(c.name)}</b><table>${c.top.map(([k, n]) => `<tr><td>${esc(k)}</td><td style="width:45%">${bar(n / m)}</td><td>${n}</td></tr>`).join('')}</table></div>`; }).join('')}</div></div>` : ''}
+   <div class="card"><h2>Columns that move together</h2>
+   ${d.pairs.length ? `<table>${d.pairs.map(([a, b, r]) => `<tr><td>${esc(a)} and ${esc(b)}</td><td style="width:35%">${bar(r, r < 0)}</td><td>r = ${f(r)}</td></tr>`).join('')}</table>` : '<p>Not enough numeric columns.</p>'}
+   ${lesson('<b>r</b> runs from -1 to 1. Near 1 means both rise together, near -1 means one rises as the other falls, and near 0 means no straight-line link. Correlation is not causation: two columns can move together without one causing the other.')}</div>`;
+}
+
+function compareView(d) {
+  if (d.kind === 'numeric_numeric') {
+    const s = Math.abs(d.r) > .7 ? 'strong' : Math.abs(d.r) > .4 ? 'moderate' : Math.abs(d.r) > .15 ? 'weak' : 'almost no';
+    return `<div class="card"><h2>${esc(d.a)} vs ${esc(d.b)}</h2><div class="grid2"><div><div class="big">${f(d.r)}</div><p>correlation (r) from ${d.n} rows</p></div>
+     <div><div class="big" style="color:var(--leaf)">${d.slope >= 0 ? '+' : ''}${f(d.slope, 3)}</div><p>change in ${esc(d.b)} for each +1 in ${esc(d.a)}</p></div></div>
+     <p>There is a <b>${s}</b> ${d.r >= 0 ? 'positive' : 'negative'} straight-line link.</p>
+     ${lesson('r squared is ' + f(d.r * d.r, 2) + ', so about ' + f(d.r * d.r * 100, 0) + '% of the ups and downs in one column line up with the other. The rest is explained by something else.')}</div>`;
+  }
+  if (d.kind === 'numeric_text') {
+    const m = Math.max(...d.rows.map(r => Math.abs(r[2])), 0.0001);
+    return `<div class="card"><h2>${esc(d.number)} across ${esc(d.group)}</h2><div class="scroll"><table><tr><th>${esc(d.group)}</th><th>Rows</th><th>Average</th><th style="min-width:110px"></th><th>Median</th><th>Spread</th></tr>
+     ${d.rows.map(([k, n, mean, sd, med]) => `<tr><td>${esc(k)}</td><td>${n}</td><td>${f(mean)}</td><td>${bar(mean / m, mean < 0)}</td><td>${f(med)}</td><td>${f(sd)}</td></tr>`).join('')}</table></div>
+     <p>Groups explain <b>${f(d.eta2 * 100, 1)}%</b> of the variation in ${esc(d.number)}.</p>
+     ${lesson('This share (called eta squared) shows how much of the variation sits <i>between</i> groups rather than inside them. Near 0% means the groups look alike. Big averages with a big spread can still overlap, so check the spread too.')}</div>`;
+  }
+  const mx = Math.max(...d.grid.flat(), 1);
+  return `<div class="card"><h2>${esc(d.a)} by ${esc(d.b)}</h2><div class="scroll"><table class="heat"><tr><th></th>${d.cols.map(c => `<th>${esc(c)}</th>`).join('')}</tr>
+   ${d.rows.map((r, i) => `<tr><th>${esc(r)}</th>${d.grid[i].map(n => `<td style="background:rgba(47,158,91,${(n / mx * .6).toFixed(2)})">${n}</td>`).join('')}</tr>`).join('')}</table></div>
+   ${lesson('Each cell counts the rows with that pair of values. Darker green means more rows. If every row looks like the others, the two columns are probably unrelated.')}</div>`;
+}
+
+function groupsView(d) {
+  return `<div class="card"><h2>${d.clusters.length} natural groups</h2><p>Using ${d.features.length} numeric columns from ${d.rows_used} complete rows. Each cell shows the group's average, with an arrow when it sits well above or below the overall average.</p>
+   <div class="scroll"><table><tr><th>Group</th><th>Rows</th>${d.features.map(n => `<th>${esc(n)}</th>`).join('')}</tr>
+   <tr><td><i>All rows</i></td><td>${d.rows_used}</td>${d.overall.map(v => `<td>${f(v)}</td>`).join('')}</tr>
+   ${d.clusters.map((c, i) => `<tr><td><b>Group ${i + 1}</b></td><td>${c.size}</td>${c.means.map((v, j) => { const o = d.overall[j], t = Math.abs(o) * .15 || .1;
+     return `<td>${f(v)} ${v > o + t ? '<b style="color:var(--leaf)">▲</b>' : v < o - t ? '<b style="color:var(--warn)">▼</b>' : ''}</td>`; }).join('')}</tr>`).join('')}</table></div>
+   ${lesson('<b>k-means</b> picks group centres, assigns each row to its nearest centre, then moves each centre to the middle of its rows and repeats. Columns are scaled first so big numbers do not dominate. The method will always return groups, so check that they are meaningfully different before trusting them.')}</div>`;
+}
+</script>
+</body>
+</html>
